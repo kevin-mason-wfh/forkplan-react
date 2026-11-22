@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { auth, session } from './api.js';
+import { auth, session, userEmail } from './api.js';
 import { Field, useUI } from './ui.jsx';
 import Home from './views/Home.jsx';
 import MealPlan from './views/MealPlan.jsx';
@@ -70,6 +70,7 @@ export default function App() {
         <div className="logo"><img src="/logo.png" alt="" />Forkplan</div>
         {FULL.map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'active' : '')}>{label}</NavLink>)}
         <div className="spacer" />
+        {userEmail() && <div className="useremail" title={userEmail()}>{userEmail()}</div>}
         <a onClick={async () => { await auth.signOut(); setSignedIn(false); }}>Sign out</a>
       </nav>
       <nav className="side compact">
@@ -78,6 +79,7 @@ export default function App() {
         <button type="button" className={'morebtn' + (more || MORE.some(([to]) => pathname.startsWith(to)) ? ' active' : '')} aria-expanded={more} onClick={() => setMore(m => !m)}><span className="ni dots"><i /><i /><i /></span><span className="nl">More</span></button>
         {more && <div className="subnav" role="menu">
           {MORE.map(([to, icon, label]) => <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'active' : '')}><span className="ni">{icon}</span>{label}</NavLink>)}
+          {userEmail() && <div className="useremail" title={userEmail()}>{userEmail()}</div>}
           <a className="signout" onClick={async () => { await auth.signOut(); setSignedIn(false); }}><span className="ni">🚪</span>Sign out</a>
         </div>}
       </nav>
