@@ -92,6 +92,16 @@ export function useAsync(fn, deps = []) {
 /** `state` may be one useAsync result or an array of them; the single global Loader shows until all have data. `busy` forces it on. */
 const FillWrap = ({ children }) => <div className="fillpage">{children}</div>;
 const Frag = ({ children }) => <>{children}</>;
+/** True only once `on` has been true for `ms`, so fast loads never flash the loader. */
+function useDelayed(on, ms = 200) {
+  const [v, setV] = useState(false);
+  useEffect(() => {
+    if (!on) { setV(false); return; }
+    const t = setTimeout(() => setV(true), ms);
+    return () => clearTimeout(t);
+  }, [on, ms]);
+  return v;
+}
 export function Page({ title, actions, state, busy, fill, sticky, children }) {
   const stickRef = useRef(null);
   useEffect(() => {
@@ -103,12 +113,13 @@ export function Page({ title, actions, state, busy, fill, sticky, children }) {
   const states = [].concat(state ?? []);
   const error = states.find(s => s?.error)?.error;
   const loading = busy || states.some(s => s?.loading && !s.data);
+  const showLoader = useDelayed(loading);
   return (
     <Wrap>
       {sticky && !error && !loading
         ? <div className="pg-sticky" ref={stickRef}><div className="head"><h1>{title}</h1>{actions}</div>{sticky}</div>
         : <div className="head"><h1>{title}</h1>{actions}</div>}
-      {error ? <div className="card"><p>Couldn't load: {error.message}</p></div> : loading ? <Loader label="Loading…" /> : children}
+      {error ? <div className="card"><p>Couldn't load: {error.message}</p></div> : loading ? (showLoader ? <Loader label="Loading…" /> : null) : children}
     </Wrap>
   );
 }
