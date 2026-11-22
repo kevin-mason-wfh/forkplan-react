@@ -1,0 +1,62 @@
+name: Release
+# Cut a release:  npm version minor && git push --follow-tags     (creates tag vX.Y.Z)
+on:
+  push:
+    tags: ['v*.*.*']
+permissions:
+  contents: write   # GitHub Release
+  id-token: write   # AWS OIDC (no long-lived keys)
+concurrency: release
+env:
+  AWS_REGION: eu-west-2
+  BRANCH: main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - name: Package
+        run: cd dist && zip -qr ../forkplan-web-${{ github.ref_name }}.zip .
+      - uses: actions/upload-artifact@v4
+        with: { name: dist, path: forkplan-web-*.zip }
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production   # add required reviewers in repo settings for a manual approval gate
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy to Amplify
+        env: { APP_ID: '${{ vars.AMPLIFY_APP_ID }}' }
+        run: |
+          set -euo pipefail
+          read -r JOB_ID URL < <(aws amplify create-deployment --app-id "$APP_ID" --branch-name "$BRANCH" --query '[jobId,zipUploadUrl]' --output text)
+          curl -fsS -T forkplan-web-*.zip "$URL" >/dev/null
+          aws amplify start-deployment --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$JOB_ID" >/dev/null
+          for _ in $(seq 1 60); do
+            S=$(aws amplify get-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$JOB_ID" --query job.summary.status --output text)
+            [[ $S == SUCCEED ]] && exit 0
+            [[ $S == FAILED || $S == CANCELLED ]] && { echo "Deployment $S"; exit 1; }
+            sleep 5
+          done
+          echo "Timed out"; exit 1
+
+  github-release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist }
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: forkplan-web-*.zip
