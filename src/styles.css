@@ -783,3 +783,4 @@ table.ing-list tr{box-shadow:inset 3px 0 0 transparent}table.ing-list tr.clickab
 }
 
 nav.side .logo img{width:28px;height:28px;border-radius:7px;display:block}
+.auth{text-align:center}.auth form,.auth .card{text-align:left}.auth-logo{width:96px;height:96px;border-radius:22px;display:block;margin:0 auto 12px}.auth h1{margin-bottom:20px}

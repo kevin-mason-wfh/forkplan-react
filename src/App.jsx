@@ -33,7 +33,8 @@ function AuthScreen({ onDone }) {
   };
   return (
     <div className="auth">
-      <h1>🍴 Forkplan</h1>
+      <img className="auth-logo" src="/logo.png" alt="" />
+      <h1>Forkplan</h1>
       <form className="card" onSubmit={submit}>
         <Field label="Email"><input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>
         {mode !== 'confirm' && <Field label="Password"><input type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} /></Field>}
