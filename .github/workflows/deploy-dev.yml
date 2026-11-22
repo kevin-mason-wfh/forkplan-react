@@ -1,0 +1,46 @@
+name: Deploy (dev)
+# Runs when a PR is merged to main (i.e. any push to main). Production is released separately via release.yml.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write   # AWS OIDC (no long-lived keys)
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+env:
+  AWS_REGION: eu-west-2
+  AMPLIFY_BRANCH: dev
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_IMAGE_BASE: ${{ vars.VITE_IMAGE_BASE }}
+      - run: cd dist && zip -qr ../dist.zip .
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy to Amplify
+        env: { APP_ID: '${{ vars.AMPLIFY_APP_ID }}' }
+        run: |
+          set -euo pipefail
+          read -r JOB_ID URL < <(aws amplify create-deployment --app-id "$APP_ID" --branch-name "$AMPLIFY_BRANCH" --query '[jobId,zipUploadUrl]' --output text)
+          curl -fsS -T dist.zip "$URL" >/dev/null
+          aws amplify start-deployment --app-id "$APP_ID" --branch-name "$AMPLIFY_BRANCH" --job-id "$JOB_ID" >/dev/null
+          for _ in $(seq 1 60); do
+            S=$(aws amplify get-job --app-id "$APP_ID" --branch-name "$AMPLIFY_BRANCH" --job-id "$JOB_ID" --query job.summary.status --output text)
+            [[ $S == SUCCEED ]] && { echo "Deployed to https://${AMPLIFY_BRANCH}.${APP_ID}.amplifyapp.com"; exit 0; }
+            [[ $S == FAILED || $S == CANCELLED ]] && { echo "Deployment $S"; exit 1; }
+            sleep 5
+          done
+          echo "Timed out"; exit 1
