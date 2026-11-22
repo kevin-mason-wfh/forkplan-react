@@ -5,6 +5,13 @@ export const session = {
   set tokens(v) { v ? localStorage.setItem(TOK, JSON.stringify(v)) : localStorage.removeItem(TOK); },
   account: null,
 };
+/** Email of the signed-in user, read from the Cognito ID token (display only). */
+export function userEmail() {
+  try {
+    const p = session.tokens?.id?.split('.')[1];
+    return p ? JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/'))).email || '' : '';
+  } catch { return ''; }
+}
 const IMAGE_BASE = (import.meta.env.VITE_IMAGE_BASE || '').replace(/\/+$/, '');
 export const imageUrl = key => (key && IMAGE_BASE ? `${IMAGE_BASE}/${key}` : null);
 /** Best image for a recipe / planned meal: API-provided URL first, then the configured image base. */
