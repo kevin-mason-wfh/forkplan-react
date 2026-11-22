@@ -66,13 +66,13 @@ export default function App() {
   return (
     <div className="shell">
       <nav className="side desk">
-        <div className="logo">🍴 Forkplan</div>
+        <div className="logo"><img src="/logo.png" alt="" />Forkplan</div>
         {FULL.map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'active' : '')}>{label}</NavLink>)}
         <div className="spacer" />
         <a onClick={async () => { await auth.signOut(); setSignedIn(false); }}>Sign out</a>
       </nav>
       <nav className="side compact">
-        <NavLink to="/" end className={({ isActive }) => 'logo' + (isActive ? ' active' : '')} aria-label="Home"><span className="ni">🍴</span><span className="nl">Forkplan</span></NavLink>
+        <NavLink to="/" end className={({ isActive }) => 'logo' + (isActive ? ' active' : '')} aria-label="Home"><span className="ni"><img src="/logo.png" alt="" /></span><span className="nl">Forkplan</span></NavLink>
         {NAV.map(([to, icon, label]) => <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'active' : '')}><span className="ni">{icon}</span><span className="nl">{label}</span></NavLink>)}
         <button type="button" className={'morebtn' + (more || MORE.some(([to]) => pathname.startsWith(to)) ? ' active' : '')} aria-expanded={more} onClick={() => setMore(m => !m)}><span className="ni dots"><i /><i /><i /></span><span className="nl">More</span></button>
         {more && <div className="subnav" role="menu">
