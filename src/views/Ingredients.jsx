@@ -4,9 +4,9 @@ import { Chips, Field, PencilIcon, Page, Select, TrashIcon, num, useAsync, useSe
 import ListToolbar from '../ListToolbar.jsx';
 import { MacroPills, NutriTiles, fmt } from '../nutrition.jsx';
 
-export function Editor({ existing, close, onSaved }) {
+export function Editor({ existing, close, onSaved, initialName = '' }) {
   const { run } = useUI();
-  const i = existing ?? { name: '', unit: 'g', size: 100, brand: '', category: 'OTHER', dietary_attributes: [], allergens: [], nutrition_facts: null };
+  const i = existing ?? { name: initialName, unit: 'g', size: 100, brand: '', category: 'OTHER', dietary_attributes: [], allergens: [], nutrition_facts: null };
   const algState = useAsync(() => api.allergens().catch(() => []));
   const allergens = algState.data ?? [];
   const nf = i.nutrition_facts ?? i.nutrition ?? {};
@@ -18,11 +18,13 @@ export function Editor({ existing, close, onSaved }) {
     if (!f.name.trim()) return;
     const payload = { name: f.name.trim(), size: +f.size || 1, brand: f.brand || null, category: f.category, dietary_attributes: [...attrs], allergens: [...alg] };
     if (!existing || f.unit !== i.unit) payload.unit = f.unit; // the API refuses unit changes on ingredients already in use
+    let saved;
     const ok = await run(async () => {
       const r = existing ? await api.updateIngredient(i.id, payload) : await api.createIngredient(payload);
+      saved = r;
       if (f.kcal !== '') await api.setNutrition(existing ? i.id : r.id, { kcal: +f.kcal, fat: +f.fat || 0, protein: +f.protein || 0, carbs: +f.carbs || 0 });
     }, 'Saved');
-    if (ok) { close(); onSaved(); }
+    if (ok) { close(); onSaved(saved); }
   };
   return (
     <>
