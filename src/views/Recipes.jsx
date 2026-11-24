@@ -4,6 +4,7 @@ import RecipeView from '../RecipeView.jsx';
 import ListToolbar from '../ListToolbar.jsx';
 import { MacroPills, fmt, recipeN } from '../nutrition.jsx';
 import { loadIngredients } from '../lookup.js';
+import { Editor as IngredientEditor } from './Ingredients.jsx';
 import { Chips, Field, Page, Select, num, useAsync, useSet, useUI } from '../ui.jsx';
 
 export function AddToPlan({ r, source, close }) {
@@ -68,8 +69,36 @@ function Detail({ r, source, reload, close, edit }) {
   );
 }
 
+/** Search the user's + catalog ingredients, or create a new one without leaving the recipe. */
+function IngredientPicker({ list, onPick, close }) {
+  const { openModal } = useUI();
+  const [q, setQ] = useState('');
+  const term = q.trim().toLowerCase();
+  const hits = list.filter(i => !term || i.name.toLowerCase().includes(term) || (i.brand ?? '').toLowerCase().includes(term));
+  const exact = list.some(i => i.source === 'ACCOUNT' && i.name.trim().toLowerCase() === term);
+  const create = () => openModal('New ingredient', closeEd => (
+    <IngredientEditor initialName={q.trim()} close={closeEd} onSaved={r => { if (r?.id) { onPick({ ...r, source: 'ACCOUNT' }, true); close(); } }} />
+  ));
+  return (
+    <div className="picker">
+      <div className="picker-head"><input autoFocus placeholder="Search or create ingredient…" value={q} onChange={e => setQ(e.target.value)} /></div>
+      <div className="picker-list">
+        {term && !exact && <div className="row picker-item" onClick={create}><b className="picker-plus">＋</b> Create “{q.trim()}”</div>}
+        {hits.map(i => (
+          <div key={`${i.source}:${i.id}`} className="row picker-item" onClick={() => { onPick(i); close(); }}>
+            <span className="grow">{i.name}{i.brand ? <span className="muted"> · {i.brand}</span> : null}</span>
+            <span className="muted">{i.unit}{i.source === 'CATALOG' ? ' · catalog' : ''}</span>
+          </div>
+        ))}
+        {!hits.length && !term && <p className="muted">No ingredients yet.</p>}
+      </div>
+    </div>
+  );
+}
+
 function Editor({ existing, close, onSaved }) {
-  const { run, toast } = useUI();
+  const { run, toast, openModal } = useUI();
+  const [extra, setExtra] = useState([]);
   const r = existing ?? { name: '', category: 'dinner', servings: 2, description: '', instructions: '', ingredients: [], diet_tags: [] };
   const { data } = useAsync(async () => ({ ing: await loadIngredients(), tags: await api.dietTags().catch(() => []) }));
   const [name, setName] = useState(r.name);
@@ -82,7 +111,8 @@ function Editor({ existing, close, onSaved }) {
   const file = useRef();
   if (!data) return <p className="muted">Loading…</p>;
   const { ing, tags } = data;
-  const options = ing.list.map(i => [`${i.source}:${i.id}`, `${i.name} (${i.unit})${i.source === 'CATALOG' ? ' · catalog' : ''}`]);
+  const all = [...ing.list, ...extra];
+  const options = all.map(i => [`${i.source}:${i.id}`, `${i.name} (${i.unit})${i.source === 'CATALOG' ? ' · catalog' : ''}`]);
   const upd = (idx, patch) => setRows(rs => rs.map((x, k) => (k === idx ? { ...x, ...patch } : x)));
 
   const save = async () => {
@@ -122,7 +152,9 @@ function Editor({ existing, close, onSaved }) {
           <button className="btn ghost sm" onClick={() => setRows(rs => rs.filter((_, k) => k !== idx))}>×</button>
         </div>
       ))}
-      <button className="btn ghost sm" onClick={() => { const f = ing.list[0]; if (!f) return toast('Add an ingredient first', true); setRows(rs => [...rs, { source: f.source, id: f.id, quantity: 1 }]); }}>+ Add ingredient</button>
+      <button className="btn ghost sm" onClick={() => openModal('Add ingredient', closePick => (
+        <IngredientPicker list={all} close={closePick} onPick={(f, isNew) => { if (isNew) setExtra(x => [...x, f]); setRows(rs => [...rs, { source: f.source, id: f.id, quantity: 1 }]); }} />
+      ))}>+ Add ingredient</button>
       <Field label="Instructions"><textarea style={{ minHeight: 140 }} value={instr} onChange={e => setInstr(e.target.value)} /></Field>
       {tags.length > 0 && <><label>Diet tags</label><Chips options={tags.map(t => [t.id, t.name])} selected={tagIds} onToggle={toggleTag} /></>}
       <Field label="Photo"><input type="file" accept="image/*" ref={file} /></Field>
