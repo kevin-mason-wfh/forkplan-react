@@ -83,9 +83,9 @@ function IngredientPicker({ list, onPick, close }) {
     <div className="picker">
       <div className="picker-head"><input autoFocus placeholder="Search or create ingredient…" value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="picker-list">
-        {term && !exact && <div className="row" style={{ padding: '10px 0', cursor: 'pointer', borderBottom: '1px solid var(--line)' }} onClick={create}><b style={{ color: 'var(--accent, #1f9d4a)' }}>＋</b> Create “{q.trim()}”</div>}
+        {term && !exact && <div className="row picker-item" onClick={create}><b className="picker-plus">＋</b> Create “{q.trim()}”</div>}
         {hits.map(i => (
-          <div key={`${i.source}:${i.id}`} className="row" style={{ padding: '10px 0', cursor: 'pointer', borderBottom: '1px solid var(--line)' }} onClick={() => { onPick(i); close(); }}>
+          <div key={`${i.source}:${i.id}`} className="row picker-item" onClick={() => { onPick(i); close(); }}>
             <span className="grow">{i.name}{i.brand ? <span className="muted"> · {i.brand}</span> : null}</span>
             <span className="muted">{i.unit}{i.source === 'CATALOG' ? ' · catalog' : ''}</span>
           </div>

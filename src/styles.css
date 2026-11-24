@@ -404,6 +404,7 @@ main{min-width:0}
 .picker-head{flex:none;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .picker-head .tabs{margin-bottom:12px}
 .picker-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin:0 -20px;padding:0 20px}
+.picker-item{padding:10px 0;cursor:pointer;border-bottom:1px solid var(--line)}.picker-plus{color:var(--brand)}
 .picker-list .loader{padding:60px 0}
 @media (max-width:800px){.modal:has(.picker){height:92vh}}
 
