@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, title, ref, INGREDIENT_CATEGORIES, UNITS } from '../api.js';
 import { loadIngredients } from '../lookup.js';
-import { Field, Page, PencilIcon, Select, TrashIcon, num, useAsync, useUI } from '../ui.jsx';
+import { Field, Page, PencilIcon, SearchPick, Select, TrashIcon, num, useAsync, useUI } from '../ui.jsx';
 import { catMeta } from './Pantry.jsx';
 
 const brandOf = (it, ing) => {
@@ -33,7 +33,7 @@ function AddItem({ listId, ing, close, onDone }) {
   const [sel, setSel] = useState(''); const [q, setQ] = useState(1);
   const [n, setN] = useState({ name: '', brand: '', category: 'OTHER', unit: 'each', size: 1 });
   const setNew = k => e => setN(s => ({ ...s, [k]: e.target.value }));
-  const opts = [['', '— choose ingredient —'], ...ing.list.map(i => [`${i.source}:${i.id}`, `${i.name}${i.brand ? ` – ${i.brand}` : ''} (${i.unit})`])];
+  const items = ing.list.map(i => ({ key: `${i.source}:${i.id}`, label: `${i.name}${i.brand ? ` – ${i.brand}` : ''} (${i.unit})` }));
   const add = async () => {
     if (mode === 'existing') {
       if (!sel) return;
@@ -54,7 +54,7 @@ function AddItem({ listId, ing, close, onDone }) {
       <button className={mode === 'new' ? 'on' : ''} onClick={() => setMode('new')}>✨ New ingredient</button>
     </div>
     {mode === 'existing'
-      ? <Field label="Ingredient"><Select value={sel} onChange={e => setSel(e.target.value)} options={opts} /></Field>
+      ? <Field label="Ingredient"><SearchPick autoFocus items={items} value={sel} onChange={setSel} placeholder="Type to search, e.g. milk" /></Field>
       : <>
         <Field label="Name"><input autoFocus placeholder="e.g. Sourdough loaf" value={n.name} onChange={setNew('name')} /></Field>
         <div className="field-row"><Field label="Brand (optional)"><input value={n.brand} onChange={setNew('brand')} /></Field>

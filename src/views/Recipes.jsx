@@ -4,7 +4,7 @@ import RecipeView from '../RecipeView.jsx';
 import ListToolbar from '../ListToolbar.jsx';
 import { MacroPills, fmt, recipeN } from '../nutrition.jsx';
 import { loadIngredients } from '../lookup.js';
-import { Chips, Field, Page, Select, num, useAsync, useSet, useUI } from '../ui.jsx';
+import { Chips, Field, Page, SearchPick, Select, num, useAsync, useSet, useUI } from '../ui.jsx';
 
 export function AddToPlan({ r, source, close }) {
   const { run } = useUI();
@@ -84,7 +84,7 @@ function Editor({ existing, close, onSaved }) {
   const file = useRef();
   if (!data) return <p className="muted">Loading…</p>;
   const { ing, tags } = data;
-  const options = ing.list.map(i => [`${i.source}:${i.id}`, `${i.name} (${i.unit})${i.source === 'CATALOG' ? ' · catalog' : ''}`]);
+  const items = ing.list.map(i => ({ key: `${i.source}:${i.id}`, label: `${i.name} (${i.unit})${i.source === 'CATALOG' ? ' · catalog' : ''}` }));
   const upd = (idx, patch) => setRows(rs => rs.map((x, k) => (k === idx ? { ...x, ...patch } : x)));
 
   const save = async () => {
@@ -98,7 +98,7 @@ function Editor({ existing, close, onSaved }) {
         await api.updateRecipe(id, payload);
         const after = new Set(rows.map(x => `${x.source}:${x.id}`));
         for (const i of r.ingredients) if (!after.has(`${i.ingredient_source}:${refId(i)}`)) await api.removeRecipeIngredient(id, refId(i), i.ingredient_source);
-        for (const x of rows) await api.setRecipeIngredient(id, x.id, x.quantity, x.source);
+        for (const x of rows) if (x.id) await api.setRecipeIngredient(id, x.id, x.quantity, x.source);
         const old = new Set((r.diet_tags ?? []).map(t => t.id));
         for (const t of tagIds) if (!old.has(t)) await api.assignTag(id, t);
         for (const t of old) if (!tagIds.has(t)) await api.removeTag(id, t);
@@ -119,12 +119,12 @@ function Editor({ existing, close, onSaved }) {
       <label>Ingredients</label>
       {rows.map((row, idx) => (
         <div key={idx} className="row" style={{ marginBottom: 6 }}>
-          <Select style={{ flex: 2 }} value={`${row.source}:${row.id}`} options={options} onChange={e => { const [s, ...id] = e.target.value.split(':'); upd(idx, { source: s, id: id.join(':') }); }} />
+          <div style={{ flex: 2, minWidth: 0 }}><SearchPick autoFocus={!row.id} items={items} value={row.id ? `${row.source}:${row.id}` : ''} onChange={k => { const [s, ...id] = k.split(':'); upd(idx, { source: s, id: id.join(':') }); }} placeholder="Type an ingredient…" /></div>
           <input type="number" min="0" step="any" style={{ flex: 1 }} value={row.quantity} onChange={e => upd(idx, { quantity: +e.target.value })} />
           <button className="btn ghost sm" onClick={() => setRows(rs => rs.filter((_, k) => k !== idx))}>×</button>
         </div>
       ))}
-      <button className="btn ghost sm" onClick={() => { const f = ing.list[0]; if (!f) return toast('Add an ingredient first', true); setRows(rs => [...rs, { source: f.source, id: f.id, quantity: 1 }]); }}>+ Add ingredient</button>
+      <button className="btn ghost sm" onClick={() => setRows(rs => [...rs, { source: 'ACCOUNT', id: null, quantity: 1 }])}>+ Add ingredient</button>
       <Field label="Instructions"><textarea style={{ minHeight: 140 }} value={instr} onChange={e => setInstr(e.target.value)} /></Field>
       {tags.length > 0 && <><label>Diet tags</label><Chips options={tags.map(t => [t.id, t.name])} selected={tagIds} onToggle={toggleTag} /></>}
       <Field label="Photo"><input type="file" accept="image/*" ref={file} /></Field>

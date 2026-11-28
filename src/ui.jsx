@@ -145,3 +145,45 @@ export const TrashIcon = () => (
 export const PencilIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
 );
+
+/**
+ * One box to type in and pick from: replaces a separate search field + dropdown.
+ * `items` is [{ key, label }]; matches starting with the typed text come first.
+ */
+export function SearchPick({ items, value, onChange, placeholder = 'Type to search…', autoFocus, max = 50 }) {
+  const [q, setQ] = useState(null); // null = showing the chosen item, not typing
+  const [open, setOpen] = useState(false);
+  const [hi, setHi] = useState(0);
+  const listRef = useRef(null);
+  const cur = items.find(i => i.key === value);
+  const t = (q ?? '').trim().toLowerCase();
+  const matches = !t ? items.slice(0, max) : [
+    ...items.filter(i => i.label.toLowerCase().startsWith(t)),
+    ...items.filter(i => !i.label.toLowerCase().startsWith(t) && i.label.toLowerCase().includes(t)),
+  ].slice(0, max);
+  useEffect(() => { listRef.current?.children[hi]?.scrollIntoView({ block: 'nearest' }); }, [hi]);
+  const pick = i => { onChange(i.key); setQ(null); setOpen(false); };
+  const key = e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setHi(h => Math.min(h + 1, matches.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHi(h => Math.max(h - 1, 0)); }
+    else if (e.key === 'Enter' && open && matches[hi]) { e.preventDefault(); pick(matches[hi]); }
+    else if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); setQ(null); }
+  };
+  return (
+    <div className="spick">
+      <input role="combobox" aria-expanded={open} aria-autocomplete="list" autoFocus={autoFocus} placeholder={placeholder}
+        value={q ?? cur?.label ?? ''} onKeyDown={key}
+        onFocus={e => { setOpen(true); e.target.select(); }}
+        onChange={e => { setQ(e.target.value); setOpen(true); setHi(0); }}
+        onBlur={() => { setOpen(false); setQ(null); }} />
+      {open && (
+        <ul className="spick-list" role="listbox" ref={listRef}>
+          {matches.length ? matches.map((i, k) => (
+            <li key={i.key} role="option" aria-selected={i.key === value} className={(k === hi ? 'hi' : '') + (i.key === value ? ' sel' : '')}
+              onMouseDown={e => { e.preventDefault(); pick(i); }} onMouseEnter={() => setHi(k)}>{i.label}</li>
+          )) : <li className="spick-none">No matches — try a shorter word</li>}
+        </ul>
+      )}
+    </div>
+  );
+}

@@ -7,7 +7,7 @@ import { suggest } from '../stats.js';
 import { loadIngredients } from '../lookup.js';
 import { Detail, Editor } from './Ingredients.jsx';
 import ListToolbar from '../ListToolbar.jsx';
-import { Field, Loader, Page, Select, TrashIcon, num, useAsync, useUI } from '../ui.jsx';
+import { Field, Loader, Page, SearchPick, Select, TrashIcon, num, useAsync, useUI } from '../ui.jsx';
 
 export const CAT = {
   MEAT: ['🥩', '#c2410c'], SEAFOOD: ['🐟', '#0369a1'], DAIRY: ['🧀', '#ca8a04'], EGGS: ['🥚', '#d97706'],
@@ -34,13 +34,10 @@ function NewPantry({ close, onDone }) {
 
 function AddItem({ pantry, ing, close, onDone }) {
   const { run } = useUI();
-  const [q, setQ] = useState('');
-  const options = ing.list.filter(i => i.name.toLowerCase().includes(q)).slice(0, 200).map(i => [`${i.source}:${i.id}`, `${i.name} (${i.unit})${i.source === 'CATALOG' ? ' · catalog' : ''}`]);
-  const [sel, setSel] = useState(''); const [qty, setQty] = useState(1);
-  const cur = options.find(o => o[0] === sel)?.[0] ?? options[0]?.[0] ?? '';
+  const items = ing.list.map(i => ({ key: `${i.source}:${i.id}`, label: `${i.name} (${i.unit})${i.source === 'CATALOG' ? ' · catalog' : ''}` }));
+  const [cur, setCur] = useState(''); const [qty, setQty] = useState(1);
   return (<>
-    <Field label="Search"><input placeholder="Filter ingredients…" value={q} onChange={e => setQ(e.target.value.toLowerCase())} /></Field>
-    <Field label="Ingredient"><Select value={cur} onChange={e => setSel(e.target.value)} options={options.length ? options : [['', 'No matches']]} /></Field>
+    <Field label="Food"><SearchPick autoFocus items={items} value={cur} onChange={setCur} placeholder="Type to search, e.g. eggs" /></Field>
     <Field label="Quantity"><input type="number" min="0" step="any" value={qty} onChange={e => setQty(e.target.value)} /></Field>
     <button className="btn" disabled={!cur} style={{ marginTop: 12 }} onClick={async () => { const [s, ...id] = cur.split(':'); if (await run(() => api.addPantryItem(pantry.id, s, id.join(':'), +qty))) { close(); onDone(); } }}>Add</button></>);
 }
