@@ -112,16 +112,19 @@ export default function Pantry() {
   const showCard = it => { if (!it.info) return;
     const edit = x => openModal('Edit ingredient', close => <Editor existing={x} close={close} onSaved={() => { lists.reload(); detail.reload(); }} />);
     openModal(it.info.name, close => <Detail x={it.info} src={it.src} close={close} onEdit={edit} />); };
+  const openSuggestions = () => openModal('Meal suggestions', close => <Suggestions items={pantry.items ?? []} ing={ing} close={close} />, { sheet: true });
+  const createFirst = async () => { const r = await run(() => api.createPantry('Kitchen'), 'Pantry created'); if (r) { setSelected(r.id); lists.reload(); } };
   const step = async (it, d) => { const fn = d < 0 ? api.reducePantryItem : api.addPantryItem; if (await run(() => fn(pantry.id, it.src, it.id, Math.abs(d)))) detail.reload(); };
 
   const actions = (<>
+    {pantry && <button className="btn ghost sug-btn" data-tour="pantry-suggest" onClick={openSuggestions}>🍳 Meal suggestions</button>}
     {pantries.length > 0 && <Select style={{ width: 'auto' }} value={selected ?? ''} onChange={e => { setSelected(e.target.value); setCat('ALL'); setQuery(''); }} options={pantries.map(p => [p.id, p.name])} />}
     <details className="menu no-print">
       <summary className="round-btn" aria-label="Pantry options" data-tour="pantry-more">⋯</summary>
       <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
       <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
         <button onClick={() => openModal('New pantry', close => <NewPantry close={close} onDone={id => { setSelected(id); lists.reload(); }} />)}>➕ New pantry</button>
-        {pantry && <button onClick={() => openModal('Meal suggestions', close => <Suggestions items={pantry.items ?? []} ing={ing} close={close} />, { sheet: true })}>🍳 Meal suggestions</button>}
+        {pantry && <button className="sug-menu" onClick={openSuggestions}>🍳 Meal suggestions</button>}
         {pantry && <button className="danger" onClick={async () => { if (await confirm(`Delete pantry "${pantry.name}"?`) && await run(() => api.deletePantry(pantry.id), 'Deleted')) { setSelected(null); lists.reload(); } }}>🗑️ Delete pantry</button>}
       </div>
     </details>
@@ -129,7 +132,7 @@ export default function Pantry() {
   </>);
   return (
     <Page title="Pantry" fill actions={actions} state={[lists, detail]} busy={!selected && pantries.length > 0}>
-      {!selected ? <div className="card"><p>No pantry yet — create one to track what you have at home.</p></div> : !pantry ? (detail.error ? <div className="card"><p>Couldn't load pantry: {detail.error.message}</p></div> : null) : (<>
+      {!selected ? <div className="card empty-cta"><div className="empty-ic">🥫</div><p>Your pantry is a list of the food you have at home. Set it up to see what you can cook and to leave those items off your shopping list.</p><button className="btn" data-tour="pantry-create" onClick={createFirst}>Create my pantry</button></div> : !pantry ? (detail.error ? <div className="card"><p>Couldn't load pantry: {detail.error.message}</p></div> : null) : (<>
         <ListToolbar
           query={query} onQuery={setQuery} placeholder="Search pantry…"
           cats={INGREDIENT_CATEGORIES.filter(c => byCat(c).length || cat === c).map(c => ({ key: c, label: title(c), emoji: catMeta(c)[0], color: catMeta(c)[1], count: byCat(c).length }))} cat={cat} onCat={setCat} total={found.length}

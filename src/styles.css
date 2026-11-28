@@ -800,3 +800,22 @@ nav.side .useremail{font-size:12px;color:var(--muted);padding:0 12px 4px;overflo
 .tour-skip{margin-right:auto;background:none;border:0;padding:10px 0;color:var(--muted);font-size:15px;text-decoration:underline;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
 @media print{.tour-block,.tour-dim,.tour-hole,.tour-bubble{display:none!important}}
+
+/* labelled "eaten" toggle on meal cards */
+.eat-btn{display:flex;flex-direction:column;align-items:center;gap:3px;align-self:center;flex:none;background:none;border:0;padding:0;cursor:pointer;color:var(--muted);font-size:11px;font-weight:600;min-width:38px}
+.eat-btn .check-c{align-self:auto;font-style:normal}
+.eat-btn[aria-pressed=true] small{color:var(--ink)}
+
+/* empty states with one clear action */
+.empty-cta{text-align:center;padding:32px 20px}.empty-cta p{max-width:440px;margin:6px auto 18px;font-size:16px;line-height:1.45}
+.empty-cta .empty-ic{font-size:40px}.empty-cta .btn{padding:12px 22px;font-size:16px}
+
+/* checkbox option with a hint line (Shopping → New list) */
+.opt-check{display:flex;gap:12px;align-items:flex-start;margin:14px 0 4px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;color:var(--ink);font-size:15px;cursor:pointer}
+.opt-check input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--brand);flex:none}
+.opt-check small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+
+/* Pantry: Meal suggestions is a button where there's room, a ⋯ menu item otherwise */
+.sug-btn{white-space:nowrap}.menu-pop .sug-menu{display:none}
+@media (max-width:640px){.sug-btn{display:none}.menu-pop .sug-menu{display:block}}
+@media print{.sug-btn{display:none!important}}

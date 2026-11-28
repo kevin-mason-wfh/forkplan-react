@@ -14,14 +14,16 @@ const qty = i => i.purchase_quantity ?? i.quantity ?? i.required_quantity ?? 0;
 function Generate({ close, onDone }) {
   const { run, toast } = useUI();
   const { data } = useAsync(async () => ({ plans: await api.mealPlans(), pantries: await api.pantries().catch(() => []) }));
-  const [plan, setPlan] = useState(''); const [pan, setPan] = useState(null);
+  const [plan, setPlan] = useState(''); const [pan, setPan] = useState(''); const [skipOwned, setSkipOwned] = useState(true);
   if (!data) return <p className="muted">Loading…</p>;
   if (!data.plans.length) return <p>Create a meal plan first.</p>;
-  const planId = plan || data.plans[0].id; const pantryId = pan ?? data.pantries[0]?.id ?? '';
+  const planId = plan || data.plans[0].id;
+  const pantryId = skipOwned ? pan || data.pantries[0]?.id || '' : '';
   return (<>
-    <Field label="From meal plan"><Select value={planId} onChange={e => setPlan(e.target.value)} options={data.plans.map(p => [p.id, p.name])} /></Field>
-    <Field label="Pantry"><Select value={pantryId} onChange={e => setPan(e.target.value)} options={[['', 'No pantry deduction'], ...data.pantries.map(p => [p.id, `Deduct ${p.name}`])]} /></Field>
-    <button className="btn" style={{ marginTop: 12 }} onClick={async () => { const r = await run(() => api.generateShopping(planId, pantryId), 'List generated'); if (r) { close(); onDone((r.shopping_list ?? r).id); } }}>Generate</button>
+    <Field label="Meal plan"><Select value={planId} onChange={e => setPlan(e.target.value)} options={data.plans.map(p => [p.id, p.name])} /></Field>
+    {data.pantries.length > 0 && <label className="opt-check"><input type="checkbox" checked={skipOwned} onChange={e => setSkipOwned(e.target.checked)} /><span>Leave out food I already have<small>Uses what's in your pantry</small></span></label>}
+    {skipOwned && data.pantries.length > 1 && <Field label="Which pantry?"><Select value={pantryId} onChange={e => setPan(e.target.value)} options={data.pantries.map(p => [p.id, p.name])} /></Field>}
+    <button className="btn" style={{ marginTop: 12 }} onClick={async () => { const r = await run(() => api.generateShopping(planId, pantryId), 'Shopping list made'); if (r) { close(); onDone((r.shopping_list ?? r).id); } }}>Make list</button>
   </>);
 }
 
@@ -92,25 +94,24 @@ export default function Shopping() {
   const shown = items.filter(i => (catOn === 'ALL' || catOf(i) === catOn) && (brandOn === 'ALL' || (brandOn === 'NONE' ? !brandOf(i, ing) : brandOf(i, ing) === brandOn)));
   const groups = Object.entries(shown.reduce((a, i) => { (a[i.category ?? 'OTHER'] ??= []).push(i); return a; }, {})).sort(([a], [b]) => a.localeCompare(b));
 
+  const generate = () => openModal('New shopping list', close => <Generate close={close} onDone={id => { setSelected(id); lists.reload(); }} />);
   const actions = (<>
     {lists.data?.length > 0 && <Select style={{ width: 'auto' }} value={selected ?? ''} onChange={e => setSelected(e.target.value)} options={lists.data.map(l => [l.id, l.name || `List ${l.week_start ?? l.id.slice(0, 6)}`])} />}
-    {full && (
-      <details className="menu no-print">
-        <summary className="round-btn" aria-label="Shopping list options" data-tour="shop-more">⋯</summary>
-        <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
-        <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
-          <button onClick={() => openModal('Add item', close => <AddItem listId={full.id} ing={ing} close={close} onDone={detail.reload} />)}>➕ Add item</button>
-          <button onClick={async () => { if (await run(() => api.regenerateShopping(full.id), 'List refreshed from plan')) detail.reload(); }}>🔄 Regenerate</button>
-          <button onClick={() => window.print()}>🖨️ Print</button>
-          <button className="danger" onClick={async () => { if (await confirm('Delete this shopping list?') && await run(() => api.deleteShopping(full.id), 'Deleted')) { setSelected(null); lists.reload(); } }}>🗑️ Delete list</button>
-        </div>
-      </details>
-    )}
-    <button className="round-btn add" data-tour="shop-new" title="Generate from plan" aria-label="Generate from plan" onClick={() => openModal('Generate shopping list', close => <Generate close={close} onDone={id => { setSelected(id); lists.reload(); }} />)}>+</button>
+    <details className="menu no-print">
+      <summary className="round-btn" aria-label="Shopping list options" data-tour="shop-more">⋯</summary>
+      <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
+      <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
+        <button onClick={generate}>🛒 New list from meal plan</button>
+        {full && <button onClick={async () => { if (await run(() => api.regenerateShopping(full.id), 'List updated from your meal plan')) detail.reload(); }}>🔄 Update from meal plan</button>}
+        {full && <button onClick={() => window.print()}>🖨️ Print</button>}
+        {full && <button className="danger" onClick={async () => { if (await confirm('Delete this shopping list?') && await run(() => api.deleteShopping(full.id), 'Deleted')) { setSelected(null); lists.reload(); } }}>🗑️ Delete list</button>}
+      </div>
+    </details>
+    {full && <button className="round-btn add" data-tour="shop-add" title="Add item" aria-label="Add item" onClick={() => openModal('Add item', close => <AddItem listId={full.id} ing={ing} close={close} onDone={detail.reload} />)}>+</button>}
   </>);
   return (
     <Page title="Shopping" fill actions={actions} state={[lists, detail]} busy={!selected && lists.data?.length > 0}>
-      {!selected ? <div className="card"><p>No shopping lists yet. Generate one from a meal plan.</p></div> : !full ? null : (<>
+      {!selected ? <div className="card empty-cta"><div className="empty-ic">🛒</div><p>Make a shopping list from your meal plan. Forkplan adds up every ingredient for you.</p><button className="btn" data-tour="shop-generate" onClick={generate}>Make a list from my meal plan</button></div> : !full ? null : (<>
         <div className="shop-sticky">
         <div className="card shop-hero">
           <div className="row between"><div className="shop-title"><span className="shop-ico">🛒</span><div><b>{full.name || 'Shopping list'}</b><div className="muted">{done} of {items.length} items{items.length > 0 && done === items.length ? ' · all done 🎉' : ''}</div></div></div>

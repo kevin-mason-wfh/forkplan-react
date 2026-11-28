@@ -8,7 +8,7 @@ import { userEmail } from './api.js';
  *
  * A tour may declare `needs`: a target that only exists once the user has data (e.g. a pantry).
  * Until it exists, the short `starter` tour runs instead, and the full tour plays as soon as it appears.
- * A step whose target isn't on screen is shown as a centred card.
+ * A step whose target isn't on screen uses its `alt` step if that one is visible, else shows as a centred card.
  */
 const TOURS = {
   '/': {
@@ -29,9 +29,9 @@ const TOURS = {
     steps: [
       { target: 'plan-days', title: 'Pick a day', text: <>Tap a day to see its meals. The coloured dots show which meals are already planned.</> },
       { target: 'plan-add', title: 'Add a meal', text: <>Tap <b>Add breakfast</b> (or lunch, dinner…) and choose a recipe. You can change the number of servings before adding it.</> },
-      { target: 'plan-eaten', title: 'Mark it as eaten', text: <>Tap the circle when you've eaten a meal. It gets a tick and counts towards today's calories.</>,
-        missing: <>Once you've added a meal, tap the circle beside it when you've eaten it. It then counts towards today's calories.</> },
-      { target: 'plan-more', title: 'More options', text: <>Tap <b>⋯</b> to see your meal history, print the week, or <b>Move to this week</b> to reuse an old plan.</> },
+      { target: 'plan-eaten', title: 'Mark it as eaten', text: <>Tap <b>Eaten?</b> when you've eaten a meal. It gets a tick and counts towards today's calories.</>,
+        missing: <>Once you've added a meal, tap <b>Eaten?</b> beside it when you've eaten it. It then counts towards today's calories.</> },
+      { target: 'plan-more', title: 'More options', text: <>Tap <b>⋯</b> to see your meal history, print the week, import a plan, or reuse an old plan for this week.</> },
       { target: 'plan-new', title: 'Plan another week', text: <>Tap <b>+</b> to start a new plan for another week.</> },
     ],
   },
@@ -41,31 +41,31 @@ const TOURS = {
       { target: 'recipes-card', title: 'Open a recipe', text: <>Tap any recipe to see its ingredients and method. Then tap <b>Add to Meal Plan</b> to put it on a day.</>,
         missing: <>Tap any recipe to see its ingredients and method. Then tap <b>Add to Meal Plan</b> to put it on a day.</> },
       { target: 'recipes-new', title: 'Add your own', text: <>Tap <b>+</b> to write your own recipe.</> },
-      { title: 'Change a catalog recipe', text: <>Catalog recipes can't be edited directly. Open one and tap <b>Copy to my recipes</b>, then edit your copy.</> },
     ],
   },
   '/pantry': {
     needs: 'pantry-add',
     starter: [
-      { target: 'pantry-more', title: 'Set up your pantry', text: <>Your pantry is a list of the food you have at home. To start, tap <b>⋯</b> and choose <b>New pantry</b>.</> },
+      { target: 'pantry-create', title: 'Set up your pantry', text: <>Your pantry is a list of the food you have at home. Tap <b>Create my pantry</b> to start.</> },
     ],
     steps: [
       { target: 'pantry-add', title: 'Add food', text: <>Tap <b>+</b> to add something you have at home, like eggs or rice.</> },
       { target: 'pantry-stock', title: 'Update amounts', text: <>Use <b>−</b> and <b>+</b> to change how much you have. When it reaches 0 it shows as <b>Out of stock</b>.</>,
         missing: <>Once you've added food, use <b>−</b> and <b>+</b> on each item to change how much you have.</> },
-      { target: 'pantry-more', title: 'What can I cook?', text: <>Tap <b>⋯</b> then <b>Meal suggestions</b> to see recipes you can make with what you have.</> },
+      { target: 'pantry-suggest', title: 'What can I cook?', text: <>Tap <b>Meal suggestions</b> to see recipes you can make with what you have.</>,
+        alt: { target: 'pantry-more', text: <>Tap <b>⋯</b> then <b>Meal suggestions</b> to see recipes you can make with what you have.</> } },
     ],
   },
   '/shopping': {
-    needs: 'shop-more',
+    needs: 'shop-add',
     starter: [
-      { target: 'shop-new', title: 'Make your shopping list', text: <>Tap <b>+</b>, choose your meal plan and tap <b>Generate</b>. Forkplan adds up every ingredient for you, and leaves out food already in your pantry.</> },
+      { target: 'shop-generate', title: 'Make your shopping list', text: <>Tap <b>Make a list from my meal plan</b>. Forkplan adds up every ingredient for you, and can leave out food already in your pantry.</> },
     ],
     steps: [
       { target: 'shop-tick', title: 'Tick as you shop', text: <>Tap the box next to an item once it's in your basket.</>,
         missing: <>Tap the box next to each item once it's in your basket.</> },
-      { target: 'shop-more', title: 'Add or update', text: <>Tap <b>⋯</b> to add an extra item, or <b>Regenerate</b> to update the list after changing your meal plan.</> },
-      { target: 'shop-new', title: 'A new list', text: <>Tap <b>+</b> to make a list for another week.</> },
+      { target: 'shop-add', title: 'Add anything extra', text: <>Tap <b>+</b> to add something that isn't in your meals, like washing-up liquid.</> },
+      { target: 'shop-more', title: 'More options', text: <>Tap <b>⋯</b> to make a new list from your meal plan, or <b>Update from meal plan</b> after you change your meals.</> },
     ],
   },
 };
@@ -78,6 +78,12 @@ export const resetTour = () => save({});
 
 /** First visible element with this data-tour name. */
 const find = name => name ? [...document.querySelectorAll(`[data-tour="${name}"]`)].find(el => el.getClientRects().length && el.offsetWidth) : null;
+/** Resolve a step against what's on screen now: its own target, else its `alt`, else centred with `missing` text. */
+const prepare = st => {
+  if (!st.target || find(st.target)) return st;
+  if (st.alt && find(st.alt.target)) return { ...st, ...st.alt };
+  return { ...st, target: null, text: st.missing ?? st.text };
+};
 const isReady = () => document.querySelector('main .head') && !document.querySelector('main .loader, .overlay');
 
 export default function Tour() {
@@ -99,7 +105,7 @@ export default function Tour() {
       const id = full ? pathname : pathname + '#starter';
       if (!full && s.seen?.[id]) return; // starter already shown: keep watching for the full tour's content
       clearInterval(t);
-      setActive({ id, steps: (full ? tour.steps : tour.starter).map(st => ({ ...st, text: !st.target || find(st.target) ? st.text : st.missing ?? st.text })) });
+      setActive({ id, steps: (full ? tour.steps : tour.starter).map(prepare) });
     }, 200);
     return () => clearInterval(t);
   }, [pathname, nonce]);

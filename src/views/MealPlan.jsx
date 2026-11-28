@@ -172,7 +172,9 @@ function MealCard({ m, onOpen, onToggle }) {
   const img = recipeImage(m);
   return (
     <div className={`mcard cat-b-${m.category}`} onClick={onOpen}>
-      <button data-tour="plan-eaten" className={'check-c' + (m.eaten_by_me ? ' on' : '')} title={m.eaten_by_me ? 'Mark as not eaten' : 'Mark as eaten'} onClick={e => { e.stopPropagation(); onToggle(); }}>{m.eaten_by_me ? '✓' : ''}</button>
+      <button data-tour="plan-eaten" className="eat-btn" title={m.eaten_by_me ? 'Mark as not eaten' : 'Mark as eaten'} aria-pressed={!!m.eaten_by_me} onClick={e => { e.stopPropagation(); onToggle(); }}>
+        <i className={'check-c' + (m.eaten_by_me ? ' on' : '')}>{m.eaten_by_me ? '✓' : ''}</i><small>{m.eaten_by_me ? 'Eaten' : 'Eaten?'}</small>
+      </button>
       {img ? <img className="mthumb" src={img} alt="" loading="lazy" /> : <div className="mthumb ph">{ICON[m.category]}</div>}
       <div className="mbody">
         <div className="mtop">
@@ -302,27 +304,21 @@ export default function MealPlan() {
   const actions = (
     <>
       {plans.data?.length > 0 && <Select style={{ width: 'auto' }} value={selected ?? ''} onChange={e => setSelected(e.target.value)} options={plans.data.map(p => [p.id, p.name + (p.week_start ? ` (${p.week_start})` : '')])} />}
-      {plan && (
-        <details className="menu no-print">
-          <summary className="round-btn" aria-label="Plan options" data-tour="plan-more">⋯</summary>
-          <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
-          <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
-            <button onClick={() => setTab(tab === 'history' ? 'week' : 'history')}>{tab === 'history' ? 'Back to plan' : 'Meal history'}</button>
-            <button onClick={() => openModal('Rename plan', close => <Rename plan={plan} close={close} onDone={refreshAll} />)}>Rename</button>
-            <button onClick={async () => { if (await run(() => api.advanceWeek(plan.id, isoDate(mondayOf())), 'Moved to this week')) refreshAll(); }}>Move to this week</button>
-            <button onClick={() => window.print()}>Print</button>
-            <button onClick={exportPlan}>Export plan (JSON)</button>
-            <button onClick={async () => { const b = await run(() => gatherPlan(plan.id)); if (b) download(`forkplan-mealplan-${stamp()}.csv`, CSV.mealplans(b), 'text/csv'); }}>Export plan (CSV)</button>
-            <button className="danger" onClick={async () => { if (await confirm(`Delete "${plan.name}"?`) && await run(() => api.deleteMealPlan(plan.id), 'Deleted')) { setSelected(null); plans.reload(); } }}>Delete</button>
-          </div>
-        </details>
-      )}
       <details className="menu no-print">
-        <summary className="round-btn" aria-label="Import plan" title="Import plan">⇪</summary>
+        <summary className="round-btn" aria-label="Plan options" data-tour="plan-more">⋯</summary>
         <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
         <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
-          <button onClick={() => importPlan('json')}>Import plan (JSON)</button>
-          <button onClick={() => importPlan('csv')}>Import plan (CSV)</button>
+          {plan && <>
+            <button onClick={() => setTab(tab === 'history' ? 'week' : 'history')}>{tab === 'history' ? '📅 Back to plan' : '🕘 Meal history'}</button>
+            <button onClick={() => openModal('Rename plan', close => <Rename plan={plan} close={close} onDone={refreshAll} />)}>✏️ Rename</button>
+            {plan.week_start !== isoDate(mondayOf()) && <button onClick={async () => { if (await run(() => api.advanceWeek(plan.id, isoDate(mondayOf())), 'This plan is now set for this week')) refreshAll(); }}>🔁 Reuse this plan for this week</button>}
+            <button onClick={() => window.print()}>🖨️ Print</button>
+            <button onClick={exportPlan}>📤 Export plan (JSON)</button>
+            <button onClick={async () => { const b = await run(() => gatherPlan(plan.id)); if (b) download(`forkplan-mealplan-${stamp()}.csv`, CSV.mealplans(b), 'text/csv'); }}>📤 Export plan (CSV)</button>
+          </>}
+          <button onClick={() => importPlan('json')}>📥 Import plan (JSON)</button>
+          <button onClick={() => importPlan('csv')}>📥 Import plan (CSV)</button>
+          {plan && <button className="danger" onClick={async () => { if (await confirm(`Delete "${plan.name}"?`) && await run(() => api.deleteMealPlan(plan.id), 'Deleted')) { setSelected(null); plans.reload(); } }}>🗑️ Delete plan</button>}
         </div>
       </details>
       <button className="round-btn add" data-tour="plan-new" title="New plan" aria-label="New plan" onClick={() => openModal('New meal plan', close => <NewPlan close={close} onDone={id => { setSelected(id); plans.reload(); }} />)}>+</button>

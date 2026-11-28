@@ -39,6 +39,20 @@ export function AddToPlan({ r, source, close }) {
 
 function Detail({ r, source, reload, close, edit }) {
   const { run, confirm, openModal } = useUI();
+  /** Save a copy of this catalog recipe (with its photo) to My recipes; returns the new id. */
+  const copyToMine = async () => {
+    const created = await api.createRecipe({ name: r.name, category: r.category, servings: r.servings, description: r.description, instructions: r.instructions,
+      ingredients: r.ingredients.map(i => ({ ...ref(i.ingredient_source, refId(i)), quantity: i.quantity })), diet_tag_ids: (r.diet_tags ?? []).map(t => t.id) });
+    const url = recipeImage(r);
+    if (url && created?.id) {
+      try {
+        const blob = await (await fetch(url, { mode: 'cors', cache: 'no-store' })).blob();
+        const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+        await api.uploadRecipeImage(created.id, new File([blob], `image.${ext}`, { type: blob.type || 'image/jpeg' }));
+      } catch (e) { console.warn('Could not copy recipe image', e); }
+    }
+    return created.id;
+  };
   return (
     <RecipeView r={r} close={close}
       top={<button className="btn big" style={{ width: '100%', marginTop: 14 }} onClick={() => openModal('Add to meal plan', c => <AddToPlan r={r} source={source} close={c} />)}>Add to Meal Plan</button>}
@@ -46,23 +60,11 @@ function Detail({ r, source, reload, close, edit }) {
         {source === 'ACCOUNT' ? (<>
           <button className="btn" onClick={() => { close(); edit(r); }}>Edit</button>
           <button className="btn ghost" onClick={async () => { if (await confirm(`Delete "${r.name}"?`) && await run(() => api.deleteRecipe(r.id), 'Deleted')) { close(); reload(); } }}>Delete</button>
-        </>) : (
-          <button className="btn" onClick={async () => {
-            const ok = await run(async () => {
-              const created = await api.createRecipe({ name: r.name, category: r.category, servings: r.servings, description: r.description, instructions: r.instructions,
-                ingredients: r.ingredients.map(i => ({ ...ref(i.ingredient_source, refId(i)), quantity: i.quantity })), diet_tag_ids: (r.diet_tags ?? []).map(t => t.id) });
-              const url = recipeImage(r);
-              if (url && created?.id) {
-                try {
-                  const blob = await (await fetch(url, { mode: 'cors', cache: 'no-store' })).blob();
-                  const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
-                  await api.uploadRecipeImage(created.id, new File([blob], `image.${ext}`, { type: blob.type || 'image/jpeg' }));
-                } catch (e) { console.warn('Could not copy recipe image', e); }
-              }
-            }, 'Copied to My recipes');
-            if (ok) { close(); reload('ACCOUNT'); }
-          }}>Copy to my recipes</button>
-        )}
+        </>) : (<>
+          {/* Catalog recipes are read-only: Edit saves a copy to My recipes and opens that. */}
+          <button className="btn" onClick={async () => { const copy = await run(async () => api.recipe(await copyToMine()), 'Saved a copy to My recipes'); if (copy) { close(); reload('ACCOUNT'); edit(copy); } }}>Edit</button>
+          <button className="btn ghost" onClick={async () => { if (await run(copyToMine, 'Copied to My recipes')) { close(); reload('ACCOUNT'); } }}>Copy to my recipes</button>
+        </>)}
         <button className="btn ghost" onClick={() => window.print()}>Print</button>
       </>} />
   );
