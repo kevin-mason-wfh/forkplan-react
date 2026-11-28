@@ -117,7 +117,7 @@ export default function Pantry() {
   const actions = (<>
     {pantries.length > 0 && <Select style={{ width: 'auto' }} value={selected ?? ''} onChange={e => { setSelected(e.target.value); setCat('ALL'); setQuery(''); }} options={pantries.map(p => [p.id, p.name])} />}
     <details className="menu no-print">
-      <summary className="round-btn" aria-label="Pantry options">⋯</summary>
+      <summary className="round-btn" aria-label="Pantry options" data-tour="pantry-more">⋯</summary>
       <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
       <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
         <button onClick={() => openModal('New pantry', close => <NewPantry close={close} onDone={id => { setSelected(id); lists.reload(); }} />)}>➕ New pantry</button>
@@ -125,7 +125,7 @@ export default function Pantry() {
         {pantry && <button className="danger" onClick={async () => { if (await confirm(`Delete pantry "${pantry.name}"?`) && await run(() => api.deletePantry(pantry.id), 'Deleted')) { setSelected(null); lists.reload(); } }}>🗑️ Delete pantry</button>}
       </div>
     </details>
-    {pantry && <button className="round-btn add" title="Add item" aria-label="Add item" onClick={() => openModal('Add to pantry', close => <AddItem pantry={pantry} ing={ing} close={close} onDone={detail.reload} />)}>+</button>}
+    {pantry && <button className="round-btn add" data-tour="pantry-add" title="Add item" aria-label="Add item" onClick={() => openModal('Add to pantry', close => <AddItem pantry={pantry} ing={ing} close={close} onDone={detail.reload} />)}>+</button>}
   </>);
   return (
     <Page title="Pantry" fill actions={actions} state={[lists, detail]} busy={!selected && pantries.length > 0}>
@@ -143,7 +143,7 @@ export default function Pantry() {
                 <button className="icon-btn danger pdel" title="Remove" aria-label="Remove" onClick={async e => { e.stopPropagation(); if (await run(() => api.removePantryItem(pantry.id, it.src, it.id))) detail.reload(); }}><TrashIcon /></button>
                 <div className="pemoji">{e}</div>
                 <div className="pname" title={it.info?.name ?? it.id}>{it.info?.name ?? it.id}</div>
-                <div className="pstock" onClick={e => e.stopPropagation()}>
+                <div className="pstock" data-tour="pantry-stock" onClick={e => e.stopPropagation()}>
                   <button onClick={() => step(it, -s)} aria-label="Decrease">−</button>
                   <StockEditor it={it} onSet={setStock} /><span className="punit">{it.info?.unit ?? ''}</span>
                   <button onClick={() => step(it, s)} aria-label="Increase">+</button>

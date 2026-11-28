@@ -787,3 +787,17 @@ nav.side .logo img{width:28px;height:28px;border-radius:7px;display:block}
 .auth{text-align:center}.auth form,.auth .card{text-align:left}.auth-logo{width:96px;height:96px;border-radius:22px;display:block;margin:0 auto 12px}.auth h1{margin-bottom:20px}
 @media (prefers-color-scheme:dark){.auth p a{color:#fff}}
 nav.side .useremail{font-size:12px;color:var(--muted);padding:0 12px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- onboarding tour (src/Tour.jsx) ---- */
+.tour-block{position:fixed;inset:0;z-index:200}
+.tour-dim{position:fixed;inset:0;z-index:201;background:#000a;pointer-events:none}
+.tour-hole{position:fixed;z-index:201;border-radius:14px;box-shadow:0 0 0 3px var(--brand),0 0 0 9999px #000a;pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
+.tour-bubble{position:fixed;z-index:202;width:min(360px,calc(100vw - 32px));background:var(--card);color:var(--ink);border-radius:18px;padding:20px;box-shadow:0 14px 40px #0006;font-size:16px;line-height:1.45}
+.tour-bubble h3{font-size:19px;margin:0 0 6px}.tour-bubble p{margin:0}
+.tour-step{font-size:13px;font-weight:600;color:var(--brand);margin-bottom:6px}
+.tour-off{display:flex;gap:10px;align-items:center;margin:16px 0 0;font-size:15px;color:var(--muted);cursor:pointer}
+.tour-off input{width:20px;height:20px;margin:0;accent-color:var(--brand);flex:none}
+.tour-foot{display:flex;gap:8px;align-items:center;margin-top:16px}.tour-foot .btn{padding:11px 20px;font-size:15px}
+.tour-skip{margin-right:auto;background:none;border:0;padding:10px 0;color:var(--muted);font-size:15px;text-decoration:underline;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
+@media print{.tour-block,.tour-dim,.tour-hole,.tour-bubble{display:none!important}}

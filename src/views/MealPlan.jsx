@@ -172,7 +172,7 @@ function MealCard({ m, onOpen, onToggle }) {
   const img = recipeImage(m);
   return (
     <div className={`mcard cat-b-${m.category}`} onClick={onOpen}>
-      <button className={'check-c' + (m.eaten_by_me ? ' on' : '')} title={m.eaten_by_me ? 'Mark as not eaten' : 'Mark as eaten'} onClick={e => { e.stopPropagation(); onToggle(); }}>{m.eaten_by_me ? '✓' : ''}</button>
+      <button data-tour="plan-eaten" className={'check-c' + (m.eaten_by_me ? ' on' : '')} title={m.eaten_by_me ? 'Mark as not eaten' : 'Mark as eaten'} onClick={e => { e.stopPropagation(); onToggle(); }}>{m.eaten_by_me ? '✓' : ''}</button>
       {img ? <img className="mthumb" src={img} alt="" loading="lazy" /> : <div className="mthumb ph">{ICON[m.category]}</div>}
       <div className="mbody">
         <div className="mtop">
@@ -304,7 +304,7 @@ export default function MealPlan() {
       {plans.data?.length > 0 && <Select style={{ width: 'auto' }} value={selected ?? ''} onChange={e => setSelected(e.target.value)} options={plans.data.map(p => [p.id, p.name + (p.week_start ? ` (${p.week_start})` : '')])} />}
       {plan && (
         <details className="menu no-print">
-          <summary className="round-btn" aria-label="Plan options">⋯</summary>
+          <summary className="round-btn" aria-label="Plan options" data-tour="plan-more">⋯</summary>
           <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
           <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
             <button onClick={() => setTab(tab === 'history' ? 'week' : 'history')}>{tab === 'history' ? 'Back to plan' : 'Meal history'}</button>
@@ -325,14 +325,14 @@ export default function MealPlan() {
           <button onClick={() => importPlan('csv')}>Import plan (CSV)</button>
         </div>
       </details>
-      <button className="round-btn add" title="New plan" aria-label="New plan" onClick={() => openModal('New meal plan', close => <NewPlan close={close} onDone={id => { setSelected(id); plans.reload(); }} />)}>+</button>
+      <button className="round-btn add" data-tour="plan-new" title="New plan" aria-label="New plan" onClick={() => openModal('New meal plan', close => <NewPlan close={close} onDone={id => { setSelected(id); plans.reload(); }} />)}>+</button>
     </>
   );
 
   return (
     <Page title="Meal Plan" actions={actions} sticky={plan && tab !== 'history' ? (
       <>
-              <div className="daystrip">
+              <div className="daystrip" data-tour="plan-days">
                 {DAYS.map((d, i) => {
                   const cats = MEALS.filter(c => inDay(d, c).length);
                   return (
@@ -374,7 +374,7 @@ export default function MealPlan() {
                       <div key={c} className="msection">
                         <div className={`mhead cat-t-${c}`}><span className="micon">{ICON[c]}</span><h3>{title(c)}</h3><span className="grow" />{list.length > 0 && <span className="mhk"><b>{fmt(kcal)}</b> kcal</span>}</div>
                         {list.map(m => <MealCard key={m.id} m={m} onOpen={() => openMeal(m)} onToggle={() => toggleEaten(m)} />)}
-                        {list.length < MAX_SLOTS && <button className={`addrow cat-t-${c} no-print`} onClick={() => pick(day, c)}><span>＋</span>{list.length ? `Add another ${c}` : `Add ${c}`}</button>}
+                        {list.length < MAX_SLOTS && <button data-tour="plan-add" className={`addrow cat-t-${c} no-print`} onClick={() => pick(day, c)}><span>＋</span>{list.length ? `Add another ${c}` : `Add ${c}`}</button>}
                       </div>
                     );
                   })}

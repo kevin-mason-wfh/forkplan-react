@@ -124,7 +124,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hsec upn">
+          <div className="hsec upn" data-tour="home-today">
             <div className="row between"><h2>Up Next</h2><Link to="/plan" className="glink">View Plan</Link></div>
             {meals.length ? (
               <>
@@ -138,7 +138,7 @@ export default function Home() {
           <div className="hsec short">
             <h2>Shortcuts</h2>
             <div className="shortgrid">
-              {SHORTCUTS.map(([to, ic, l, bg]) => <Link key={to} to={to} className="shortcut"><span style={{ background: bg }}>{ic}</span>{l}</Link>)}
+              {SHORTCUTS.map(([to, ic, l, bg]) => <Link key={to} to={to} className="shortcut" data-tour={`shortcut:${to}`}><span style={{ background: bg }}>{ic}</span>{l}</Link>)}
             </div>
           </div>
         </div>
