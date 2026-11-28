@@ -94,6 +94,7 @@ export default function Shopping() {
   const shown = items.filter(i => (catOn === 'ALL' || catOf(i) === catOn) && (brandOn === 'ALL' || (brandOn === 'NONE' ? !brandOf(i, ing) : brandOf(i, ing) === brandOn)));
   const groups = Object.entries(shown.reduce((a, i) => { (a[i.category ?? 'OTHER'] ??= []).push(i); return a; }, {})).sort(([a], [b]) => a.localeCompare(b));
 
+  const updateFromPlan = async () => { if (await run(() => api.regenerateShopping(full.id), 'List updated from your meal plan')) detail.reload(); };
   const generate = () => openModal('New shopping list', close => <Generate close={close} onDone={id => { setSelected(id); lists.reload(); }} />);
   const actions = (<>
     {lists.data?.length > 0 && <Select style={{ width: 'auto' }} value={selected ?? ''} onChange={e => setSelected(e.target.value)} options={lists.data.map(l => [l.id, l.name || `List ${l.week_start ?? l.id.slice(0, 6)}`])} />}
@@ -102,7 +103,7 @@ export default function Shopping() {
       <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
       <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
         <button onClick={generate}>🛒 New list from meal plan</button>
-        {full && <button onClick={async () => { if (await run(() => api.regenerateShopping(full.id), 'List updated from your meal plan')) detail.reload(); }}>🔄 Update from meal plan</button>}
+        {full && <button onClick={updateFromPlan}>🔄 Update from meal plan</button>}
         {full && <button onClick={() => window.print()}>🖨️ Print</button>}
         {full && <button className="danger" onClick={async () => { if (await confirm('Delete this shopping list?') && await run(() => api.deleteShopping(full.id), 'Deleted')) { setSelected(null); lists.reload(); } }}>🗑️ Delete list</button>}
       </div>
@@ -118,6 +119,11 @@ export default function Shopping() {
           </div>
           <div className="bar shop-bar" style={{ marginTop: 14 }}><i style={{ width: `${items.length ? (done / items.length) * 100 : 0}%` }} /></div>
         </div>
+        {full.is_out_of_date && <div className="card plan-changed no-print" role="status">
+          <span className="plan-changed-ic">📅</span>
+          <div className="grow"><b>Your meal plan has changed</b><div className="muted">Update the list to match. Anything you've ticked stays ticked.</div></div>
+          <button className="btn" data-tour="shop-update" onClick={updateFromPlan}>Update list</button>
+        </div>}
         {items.length > 0 && <div className="shop-filters no-print">
           <div className="catbar">
             <button className={'catchip' + (catOn === 'ALL' ? ' on' : '')} style={{ '--c': 'var(--brand)' }} onClick={() => setFCat('ALL')}>🛒 All<em>{items.length}</em></button>

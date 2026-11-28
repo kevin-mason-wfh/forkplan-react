@@ -826,3 +826,8 @@ nav.side .useremail{font-size:12px;color:var(--muted);padding:0 12px 4px;overflo
 .spick-list li{padding:10px 12px;border-radius:8px;cursor:pointer;font-size:15px}
 .spick-list li.hi{background:var(--fill)}.spick-list li.sel{color:var(--brand);font-weight:600}
 .spick-list .spick-none{color:var(--muted);cursor:default}
+
+/* Shopping: meal plan changed since the list was made (API is_out_of_date) */
+.plan-changed{display:flex;align-items:center;gap:12px;padding:14px 16px;border-color:var(--brand);background:var(--brand-l)}
+.plan-changed-ic{font-size:24px}.plan-changed b{font-size:15px}.plan-changed .btn{flex:none;padding:10px 16px}
+@media (max-width:560px){.plan-changed{flex-wrap:wrap}.plan-changed .btn{width:100%}}
