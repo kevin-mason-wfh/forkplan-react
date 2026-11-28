@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { resetTour } from '../Tour.jsx';
 import { api, auth, post, session, NOTIFICATION_KEYS, waterSettings, title } from '../api.js';
 import { Chips, Field, Loader, Page, Select, useAsync, useSet, useUI } from '../ui.jsx';
 
@@ -141,6 +143,7 @@ function Subscription({ account }) {
 
 export default function Account({ signOut }) {
   const { run, confirm } = useUI();
+  const navigate = useNavigate();
   // Each section loads independently so the page renders instantly and one slow call can't block the rest.
   const acct = useAsync(async () => { const r = await post('/v1/account'); session.account = r; return r; });
   const goal = useAsync(() => api.goal());
@@ -171,6 +174,9 @@ export default function Account({ signOut }) {
           <div className="acct-col">
             <SectionLoader state={prefs} icon="🥗" name="Dietary preferences">{d => <Diet dp={d.dp} tags={d.tags} allergens={d.allergens} itags={d.itags} />}</SectionLoader>
             <SectionLoader state={notif} icon="🔔" name="Notifications">{n => <Notifications initial={n.preferences} />}</SectionLoader>
+            <Section icon="🧭" name="App tour" hint="See the quick tips for each page again.">
+              <button className="btn ghost" onClick={() => { resetTour(); navigate('/'); }}>Replay app tour</button>
+            </Section>
           </div>
         </div>
         <section className="scard danger-zone">

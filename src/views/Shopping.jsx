@@ -96,7 +96,7 @@ export default function Shopping() {
     {lists.data?.length > 0 && <Select style={{ width: 'auto' }} value={selected ?? ''} onChange={e => setSelected(e.target.value)} options={lists.data.map(l => [l.id, l.name || `List ${l.week_start ?? l.id.slice(0, 6)}`])} />}
     {full && (
       <details className="menu no-print">
-        <summary className="round-btn" aria-label="Shopping list options">⋯</summary>
+        <summary className="round-btn" aria-label="Shopping list options" data-tour="shop-more">⋯</summary>
         <div className="menu-backdrop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')} />
         <div className="menu-pop" onClick={e => e.currentTarget.parentElement.removeAttribute('open')}>
           <button onClick={() => openModal('Add item', close => <AddItem listId={full.id} ing={ing} close={close} onDone={detail.reload} />)}>➕ Add item</button>
@@ -106,7 +106,7 @@ export default function Shopping() {
         </div>
       </details>
     )}
-    <button className="round-btn add" title="Generate from plan" aria-label="Generate from plan" onClick={() => openModal('Generate shopping list', close => <Generate close={close} onDone={id => { setSelected(id); lists.reload(); }} />)}>+</button>
+    <button className="round-btn add" data-tour="shop-new" title="Generate from plan" aria-label="Generate from plan" onClick={() => openModal('Generate shopping list', close => <Generate close={close} onDone={id => { setSelected(id); lists.reload(); }} />)}>+</button>
   </>);
   return (
     <Page title="Shopping" fill actions={actions} state={[lists, detail]} busy={!selected && lists.data?.length > 0}>
@@ -135,7 +135,7 @@ export default function Shopping() {
           <div key={c} className="card shop-group" style={{ marginBottom: 12, '--c': col }}>
             <h3 className="shop-h"><span className="shop-emoji">{emoji}</span>{title(c)}<em>{list.filter(i => i.is_checked).length}/{list.length}</em></h3>
             {list.map(it => (
-              <div key={it.item_id} className={'check' + (it.is_checked ? ' done' : '')}>
+              <div key={it.item_id} data-tour="shop-tick" className={'check' + (it.is_checked ? ' done' : '')}>
                 <input type="checkbox" checked={!!it.is_checked} onChange={async e => { if (await run(() => api.checkItem(full.id, it.item_id, e.target.checked))) detail.reload(); }} />
                 <span className="n grow">{it.ingredient_name ?? 'Item'}{brandOf(it, ing) && <span className="brand-tag">{brandOf(it, ing)}</span>}</span><span className="qty-pill">{num(qty(it))} {it.unit ?? ''}</span>
                 <button className="icon-btn no-print" title="Edit" aria-label="Edit" onClick={() => openModal(`Edit ${it.ingredient_name ?? 'item'}`, close => <EditItem listId={full.id} it={it} close={close} onDone={detail.reload} />)}><PencilIcon /></button>

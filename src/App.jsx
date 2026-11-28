@@ -12,6 +12,7 @@ import Account from './views/Account.jsx';
 import Transfer from './views/Transfer.jsx';
 import Water from './views/Water.jsx';
 import NutritionSummary from './views/NutritionSummary.jsx';
+import Tour from './Tour.jsx';
 
 const FULL = [['/', 'Home'], ['/plan', 'Meal Plan'], ['/recipes', 'Recipes'], ['/ingredients', 'Ingredients'], ['/pantry', 'Pantry'], ['/shopping', 'Shopping'], ['/water', 'Water Log'], ['/nutrition', 'Nutrition Summary'], ['/data', 'Import / Export'], ['/account', 'Account']];
 const NAV = [['/plan', '📅', 'Meal Plan'], ['/pantry', '🥫', 'Pantry'], ['/shopping', '🛒', 'Shopping']];
@@ -98,6 +99,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+      <Tour />
     </div>
   );
 }

@@ -166,8 +166,8 @@ export default function Recipes() {
       <ListToolbar
         title="🍳 Recipes"
         actions={<>
-          <div className="seg srctoggle" role="group" aria-label="Recipe source">{[['ACCOUNT', '🧺 Mine'], ['CATALOG', '📚 Catalog']].map(([k, l]) => <button key={k} className={src === k ? 'on' : ''} onClick={() => { if (src !== k) { setSrc(k); reset(); } }}>{l}</button>)}</div>
-          <button className="round-btn add" title="New recipe" aria-label="New recipe" onClick={() => edit(null)}>+</button></>}
+          <div className="seg srctoggle" data-tour="recipes-source" role="group" aria-label="Recipe source">{[['ACCOUNT', '🧺 Mine'], ['CATALOG', '📚 Catalog']].map(([k, l]) => <button key={k} className={src === k ? 'on' : ''} onClick={() => { if (src !== k) { setSrc(k); reset(); } }}>{l}</button>)}</div>
+          <button className="round-btn add" data-tour="recipes-new" title="New recipe" aria-label="New recipe" onClick={() => edit(null)}>+</button></>}
         query={query} onQuery={v => setQuery(v.toLowerCase())} placeholder="Search recipes…"
         sort={{ value: sort, onChange: setSort, options: [['name', 'Sort: A–Z'], ['newest', 'Sort: Newest'], ['kcal', 'Sort: Calories ↓'], ['-kcal', 'Sort: Calories ↑'], ['protein', 'Sort: Protein ↓'], ['carbs', 'Sort: Carbs ↓'], ['fat', 'Sort: Fat ↓']] }}
         view={{ value: view, onChange: setView, first: 'grid', second: 'list' }}
@@ -177,7 +177,7 @@ export default function Recipes() {
       {shown.length === 0 ? <div className="card" style={{ textAlign: 'center', marginTop: 14 }}><div style={{ fontSize: 40 }}>🍳</div><p className="muted">{list.length ? 'No recipes match.' : src === 'ACCOUNT' ? 'No recipes yet. Create one, copy from the catalog, or import a file.' : 'No catalog recipes.'}</p></div> : (
         <div className={view === 'list' ? 'recipe-list' : 'recipe-grid'} style={{ marginTop: 14 }}>
           {shown.map(r => view === 'list' ? (
-            <div key={r.id} className="card recipe-row" style={{ '--c': MEAL_META[r.category]?.[1] ?? 'var(--brand)' }} tabIndex={0} role="button" onClick={() => open(r)} onKeyDown={e => { if (e.key === 'Enter') open(r); }}>
+            <div key={r.id} data-tour="recipes-card" className="card recipe-row" style={{ '--c': MEAL_META[r.category]?.[1] ?? 'var(--brand)' }} tabIndex={0} role="button" onClick={() => open(r)} onKeyDown={e => { if (e.key === 'Enter') open(r); }}>
               {recipeImage(r) ? <img className="rthumb" src={recipeImage(r)} alt="" loading="lazy" /> : <div className="rthumb ph">🍽</div>}
               <div className="rmain">
                 <h3>{r.name}</h3>
@@ -191,7 +191,7 @@ export default function Recipes() {
               <span className="chev">›</span>
             </div>
           ) : (
-            <div key={r.id} className="card recipe-card" onClick={() => open(r)}>
+            <div key={r.id} data-tour="recipes-card" className="card recipe-card" onClick={() => open(r)}>
               {recipeImage(r) ? <img className="thumb" src={recipeImage(r)} alt="" loading="lazy" /> : <div className="thumb">🍽</div>}
               <div className="row between" style={{ marginTop: 10, flexWrap: 'nowrap', alignItems: 'flex-start' }}>
                 <h3 style={{ fontSize: 16 }}>{r.name}</h3>
